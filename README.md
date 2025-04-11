@@ -8,6 +8,13 @@ A Model Context Protocol (MCP) server that provides browser automation capabilit
 - **LLM-friendly**: No vision models needed, operates purely on structured data.
 - **Deterministic tool application**: Avoids ambiguity common with screenshot-based approaches.
 
+### Fork Information (playwright-mcp-bypass)
+ 
+This is a fork of the original Playwright MCP project, available at [yan5xu/playwright-mcp-bypass](https://github.com/yan5xu/playwright-mcp-bypass).
+ 
+The primary goal of this fork is to enhance the ability to bypass anti-bot detection mechanisms employed by some websites. This is achieved by adding the `--disable-blink-features=AutomationControlled` argument to the browser launch options, making the automated browser appear more like a regular user's browser.
+ 
+
 ### Use Cases
 
 - Web navigation and form-filling
