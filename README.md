@@ -1,6 +1,6 @@
-## Playwright MCP
+## playwright-mcp-bypass
 
-A Model Context Protocol (MCP) server that provides browser automation capabilities using [Playwright](https://playwright.dev). This server enables LLMs to interact with web pages through structured accessibility snapshots, bypassing the need for screenshots or visually-tuned models.
+A Model Context Protocol (MCP) server that provides browser automation capabilities using [Playwright](https://playwright.dev), forked to enhance anti-bot detection bypass. This server enables LLMs to interact with web pages through structured accessibility snapshots.
 
 ### Key Features
 
@@ -8,13 +8,11 @@ A Model Context Protocol (MCP) server that provides browser automation capabilit
 - **LLM-friendly**: No vision models needed, operates purely on structured data.
 - **Deterministic tool application**: Avoids ambiguity common with screenshot-based approaches.
 
-### Fork Information (playwright-mcp-bypass)
- 
-This is a fork of the original Playwright MCP project, available at [yan5xu/playwright-mcp-bypass](https://github.com/yan5xu/playwright-mcp-bypass).
- 
-The primary goal of this fork is to enhance the ability to bypass anti-bot detection mechanisms employed by some websites. This is achieved by adding the `--disable-blink-features=AutomationControlled` argument to the browser launch options, making the automated browser appear more like a regular user's browser.
- 
+### Project Information
 
+This project (`playwright-mcp-bypass`) is maintained by [yan5xu](https://x.com/yan5xu) and is available at [yan5xu/playwright-mcp-bypass](https://github.com/yan5xu/playwright-mcp-bypass).
+
+It originated as a fork of `microsoft/playwright-mcp` with the primary goal of enhancing the ability to bypass anti-bot detection mechanisms employed by some websites. This is achieved by adding the `--disable-blink-features=AutomationControlled` argument to the browser launch options, making the automated browser appear more like a regular user's browser.
 ### Use Cases
 
 - Web navigation and form-filling
@@ -27,10 +25,10 @@ The primary goal of this fork is to enhance the ability to bypass anti-bot detec
 ```js
 {
   "mcpServers": {
-    "playwright": {
+    "playwright-mcp-bypass": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@latest"
+        "playwright-mcp-bypass@latest"
       ]
     }
   }
@@ -44,24 +42,24 @@ Install the Playwright MCP server in VS Code using one of these buttons:
 
 <!--
 // Generate using?:
-const config = JSON.stringify({ name: 'playwright', command: 'npx', args: ["-y", "@playwright/mcp@latest"] });
+const config = JSON.stringify({ name: 'playwright-mcp-bypass', command: 'npx', args: ["-y", "playwright-mcp-bypass@latest"] });
 const urlForWebsites = `vscode:mcp/install?${encodeURIComponent(config)}`;
 // Github markdown does not allow linking to `vscode:` directly, so you can use our redirect:
 const urlForGithub = `https://insiders.vscode.dev/redirect?url=${encodeURIComponent(urlForWebsites)}`;
 -->
 
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522playwright%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522%2540playwright%252Fmcp%2540latest%2522%255D%257D)  [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522playwright%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522%2540playwright%252Fmcp%2540latest%2522%255D%257D)
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522playwright-mcp-bypass%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522playwright-mcp-bypass%2540latest%2522%255D%257D)  [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%257B%2522name%2522%253A%2522playwright-mcp-bypass%2522%252C%2522command%2522%253A%2522npx%2522%252C%2522args%2522%253A%255B%2522-y%2522%252C%2522playwright-mcp-bypass%2540latest%2522%255D%257D)
 
 Alternatively, you can install the Playwright MCP server using the VS Code CLI:
 
 ```bash
 # For VS Code
-code --add-mcp '{"name":"playwright","command":"npx","args":["@playwright/mcp@latest"]}'
+code --add-mcp '{"name":"playwright-mcp-bypass","command":"npx","args":["playwright-mcp-bypass@latest"]}'
 ```
 
 ```bash
 # For VS Code Insiders
-code-insiders --add-mcp '{"name":"playwright","command":"npx","args":["@playwright/mcp@latest"]}'
+code-insiders --add-mcp '{"name":"playwright-mcp-bypass","command":"npx","args":["playwright-mcp-bypass@latest"]}'
 ```
 
 After installation, the Playwright MCP server will be available for use with your GitHub Copilot agent in VS Code.
@@ -103,10 +101,10 @@ This mode is useful for background or batch operations.
 ```js
 {
   "mcpServers": {
-    "playwright": {
+    "playwright-mcp-bypass": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@latest",
+        "playwright-mcp-bypass@latest",
         "--headless"
       ]
     }
@@ -120,7 +118,7 @@ When running headed browser on system w/o display or from worker processes of th
 run the MCP server from environment with the DISPLAY and pass the `--port` flag to enable SSE transport.
 
 ```bash
-npx @playwright/mcp@latest --port 8931
+npx playwright-mcp-bypass@latest --port 8931
 ```
 
 And then in MCP client config, set the `url` to the SSE endpoint:
@@ -128,7 +126,7 @@ And then in MCP client config, set the `url` to the SSE endpoint:
 ```js
 {
   "mcpServers": {
-    "playwright": {
+    "playwright-mcp-bypass": {
       "url": "http://localhost:8931/sse"
     }
   }
@@ -147,10 +145,10 @@ To use Vision Mode, add the `--vision` flag when starting the server:
 ```js
 {
   "mcpServers": {
-    "playwright": {
+    "playwright-mcp-bypass": {
       "command": "npx",
       "args": [
-        "@playwright/mcp@latest",
+        "playwright-mcp-bypass@latest",
         "--vision"
       ]
     }

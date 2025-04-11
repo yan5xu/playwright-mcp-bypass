@@ -1,17 +1,17 @@
 {
-  "name": "@playwright/mcp",
+  "name": "playwright-mcp-bypass",
   "version": "0.0.10",
   "description": "Playwright Tools for MCP",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/playwright-mcp.git"
+    "url": "git+https://github.com/yan5xu/playwright-mcp-bypass.git"
   },
-  "homepage": "https://playwright.dev",
+  "homepage": "https://github.com/yan5xu/playwright-mcp-bypass",
   "engines": {
     "node": ">=18"
   },
   "author": {
-    "name": "Microsoft Corporation"
+    "name": "yan5xu"
   },
   "license": "Apache-2.0",
   "scripts": {
