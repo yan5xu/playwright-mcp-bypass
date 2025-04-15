@@ -315,6 +315,9 @@ class PageSnapshot {
 
   private async _snapshotFrame(frame: playwright.Page | playwright.FrameLocator) {
     const frameIndex = this._frameLocators.push(frame) - 1;
+    // This line captures the accessibility tree of the frame's body as a YAML string.
+    // The structure (like 'navigation', 'search', 'link', 'button') comes from standard ARIA roles
+    // derived from the HTML structure of the page.
     const snapshotString = await frame.locator('body').ariaSnapshot({ ref: true });
     const snapshot = yaml.parseDocument(snapshotString);
 
