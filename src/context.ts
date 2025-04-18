@@ -150,12 +150,16 @@ export class Context {
       return { browser, browserContext };
     }
 
+    // If a CDP endpoint is provided in the options, connect using it.
     if (this.options.cdpEndpoint) {
+      // Use Playwright's function to connect to an existing browser via CDP.
       const browser = await playwright.chromium.connectOverCDP(this.options.cdpEndpoint);
+      // Assume the first context is the one we want to use.
       const browserContext = browser.contexts()[0];
       return { browser, browserContext };
     }
 
+    // Otherwise, launch a new persistent browser context.
     const browserContext = await this._launchPersistentContext();
     return { browserContext };
   }
