@@ -24,6 +24,7 @@ import pdf from './tools/pdf';
 import snapshot from './tools/snapshot';
 import tabs from './tools/tabs';
 import screen from './tools/screen';
+import extractContent from './tools/extractContent'; // Import the new tool
 import { console as consoleResource } from './resources/console';
 
 import type { Tool, ToolCapability } from './tools/tool';
@@ -40,6 +41,7 @@ const snapshotTools: Tool[] = [
   ...pdf,
   ...snapshot,
   ...tabs(true),
+  ...extractContent(true), // Add the new tool to snapshot tools
 ];
 
 const screenshotTools: Tool[] = [
@@ -51,6 +53,7 @@ const screenshotTools: Tool[] = [
   ...pdf,
   ...screen,
   ...tabs(false),
+  ...extractContent(false), // Add the new tool to screenshot tools
 ];
 
 const resources: Resource[] = [
