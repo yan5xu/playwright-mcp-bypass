@@ -29,7 +29,9 @@ const snapshot: Tool = {
   },
 
   handle: async context => {
-    return await context.currentTab().run(async () => {}, { captureSnapshot: true });
+    // Use ensureTab() instead of currentTab() to guarantee a tab exists
+    const tab = await context.ensureTab();
+    return await tab.run(async () => {}, { captureSnapshot: true });
   },
 };
 

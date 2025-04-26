@@ -26,6 +26,7 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 
 import { createServer } from './index';
 import { ServerList } from './server';
+import { startHttpServer } from './httpServer'; // Import the new function
 
 import type { LaunchOptions } from 'playwright';
 import assert from 'assert';
@@ -44,6 +45,7 @@ program
     .option('--port <port>', 'Port to listen on for SSE transport.')
     .option('--user-data-dir <path>', 'Path to the user data directory')
     .option('--vision', 'Run server that uses screenshots (Aria snapshots are used by default)')
+    .option('--http-port <port>', 'Port to listen on for HTTP API.') // Add the new option
     .action(async options => {
       let browserName: 'chromium' | 'firefox' | 'webkit';
       let channel: string | undefined;
@@ -79,22 +81,34 @@ program
         executablePath: options.executablePath,
       };
 
-      const userDataDir = options.userDataDir ?? await createUserDataDir(browserName);
+      // Define the server factory function that now accepts an optional sessionId
+      const serverFactory = async (sessionId?: string) => {
+        // Determine the user data directory:
+        // 1. Use the one provided via CLI if available.
+        // 2. Otherwise, create a session-specific one.
+        // Note: If a CLI path is provided, all sessions will share it, potentially causing conflicts.
+        const effectiveUserDataDir = options.userDataDir ?? await createUserDataDir(browserName, sessionId);
 
-      const serverList = new ServerList(() => createServer({
-        browserName,
-        userDataDir,
-        launchOptions,
+        return createServer({
+          browserName,
+          userDataDir: effectiveUserDataDir, // Use the determined directory
+          launchOptions,
         vision: !!options.vision,
-        cdpEndpoint: options.cdpEndpoint,
-        capabilities: options.caps?.split(',').map((c: string) => c.trim() as ToolCapability),
-      }));
+          cdpEndpoint: options.cdpEndpoint,
+          capabilities: options.caps?.split(',').map((c: string) => c.trim() as ToolCapability),
+        });
+      };
+
+      // Pass the factory function to ServerList
+      const serverList = new ServerList(serverFactory);
       setupExitWatchdog(serverList);
 
-      if (options.port) {
+      if (options.httpPort) { // Check for httpPort first
+        startHttpServer(+options.httpPort, serverList);
+      } else if (options.port) { // Then check for port (SSE)
         startSSEServer(+options.port, serverList);
-      } else {
-        const server = await serverList.create();
+      } else { // Default to Stdio (doesn't support multiple sessions, uses default profile)
+        const server = await serverList.create(); // Create without sessionId for stdio
         await server.connect(new StdioServerTransport());
       }
     });
@@ -113,7 +127,8 @@ function setupExitWatchdog(serverList: ServerList) {
 
 program.parse(process.argv);
 
-async function createUserDataDir(browserName: 'chromium' | 'firefox' | 'webkit') {
+// Modified to accept an optional sessionId
+async function createUserDataDir(browserName: 'chromium' | 'firefox' | 'webkit', sessionId?: string) {
   let cacheDirectory: string;
   if (process.platform === 'linux')
     cacheDirectory = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
@@ -123,7 +138,12 @@ async function createUserDataDir(browserName: 'chromium' | 'firefox' | 'webkit')
     cacheDirectory = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
   else
     throw new Error('Unsupported platform: ' + process.platform);
-  const result = path.join(cacheDirectory, 'ms-playwright', `mcp-${browserName}-profile`);
+
+  // Append sessionId if provided and not empty/default, otherwise use the default profile name
+  const profileSuffix = sessionId && sessionId !== 'default' ? `-${sessionId}` : '';
+  const profileDirName = `mcp-${browserName}-profile${profileSuffix}`;
+
+  const result = path.join(cacheDirectory, 'ms-playwright', profileDirName);
   await fs.promises.mkdir(result, { recursive: true });
   return result;
 }
@@ -150,10 +170,12 @@ async function startSSEServer(port: number, serverList: ServerList) {
       return;
     } else if (req.method === 'GET') {
       const transport = new SSEServerTransport('/sse', res);
-      sessions.set(transport.sessionId, transport);
-      const server = await serverList.create();
+      const sessionId = transport.sessionId; // Get sessionId from transport
+      sessions.set(sessionId, transport);
+      // Pass sessionId when creating server for SSE
+      const server = await serverList.create(sessionId);
       res.on('close', () => {
-        sessions.delete(transport.sessionId);
+        sessions.delete(sessionId);
         serverList.close(server).catch(e => console.error(e));
       });
       await server.connect(transport);

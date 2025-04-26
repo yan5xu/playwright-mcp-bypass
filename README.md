@@ -78,6 +78,7 @@ The Playwright MCP server supports the following command-line options:
 - `--executable-path <path>`: Path to the browser executable
 - `--headless`: Run browser in headless mode (headed by default)
 - `--port <port>`: Port to listen on for SSE transport
+- `--http-port <port>`: Port to listen on for the request/response HTTP API.
 - `--user-data-dir <path>`: Path to the user data directory
 - `--vision`: Run server that uses screenshots (Aria snapshots are used by default)
 
@@ -131,6 +132,173 @@ And then in MCP client config, set the `url` to the SSE endpoint:
     }
   }
 }
+### HTTP API Usage (Request/Response)
+
+In addition to the default Stdio transport and the SSE transport (`--port`), this server provides a standard HTTP API for request/response interactions. This is useful for clients that prefer simple HTTP calls over persistent connections.
+
+#### Enabling the HTTP API
+
+To enable the HTTP API, use the `--http-port` command-line option:
+
+```bash
+npx playwright-mcp-bypass@latest --http-port 8080
+```
+
+The server will then listen on the specified port (e.g., 8080) for incoming HTTP requests.
+
+#### Endpoints
+
+- **Base Path**: `/tools/{tool_name}`
+- **Method**:
+    - `POST`: Used for executing most tools. Tool parameters are sent in the JSON request body.
+    - `GET`: Can be used for specific read-only tools like `browser_tab_list`. No request body is needed.
+- **Examples**:
+    - `POST /tools/browser_navigate`
+    - `POST /tools/browser_click`
+    - `GET /tools/browser_tab_list`
+
+#### Request Format (POST)
+
+- **Headers**:
+    - `Content-Type: application/json`
+    - `Session-Id: <your_session_id>` (Optional, see Session Management)
+- **Body**: A JSON object containing the parameters required by the specific tool.
+
+Example (`browser_navigate`):
+```json
+{
+  "url": "https://example.com"
+}
+```
+
+Example (`browser_click`):
+```json
+{
+  "element": "Login Button",
+  "ref": "button#login"
+}
+```
+
+#### Response Format
+
+- **Content-Type**: `application/json`
+- **Success (HTTP 200)**:
+  ```json
+  {
+    "success": true,
+    "result": { ... } // The result returned by the tool execution
+  }
+  ```
+- **Error (HTTP 4xx/5xx)**:
+  ```json
+  {
+    "success": false,
+    "error": "Error message describing the failure"
+  }
+  ```
+
+#### Session Management
+
+The HTTP API manages browser state using sessions. Each session corresponds to an independent browser instance with its own context (unless a global `--user-data-dir` is specified).
+
+- **Session ID**: Sessions are identified by the `Session-Id` HTTP header in the request.
+- **Default Session**: If the `Session-Id` header is not provided, a default session named `"default"` is used.
+- **Session Creation**: A new browser instance is automatically created when a request with a previously unseen `Session-Id` (or no ID for the default session) is received.
+- **Session Reuse**: Subsequent requests with the same `Session-Id` will reuse the existing browser instance for that session.
+- **Session Timeout**: Sessions automatically time out and close after 30 minutes of inactivity to conserve resources. Any request to an active session resets the timer.
+- **User Data Directory**: By default, each session gets its own isolated user data directory (e.g., `~/.cache/ms-playwright/mcp-chromium-profile-<session_id>`). If you specify `--user-data-dir` when starting the server, *all* HTTP sessions will share that single directory, which can lead to conflicts and is generally not recommended for concurrent sessions.
+
+#### Comparison with SSE Transport (`--port`)
+
+- **SSE (`--port`)**: Establishes a persistent connection per client. State (browser instance) is tied to the connection lifetime. Communication is typically streaming (server sends events).
+- **HTTP API (`--http-port`)**: Uses standard request/response cycles. State is managed via the `Session-Id` header and has a timeout. Simpler for clients that don't need persistent connections.
+
+#### Examples
+
+##### curl
+
+```bash
+# Navigate (uses default session if Session-Id header is omitted)
+curl -X POST http://localhost:8080/tools/browser_navigate \
+     -H "Content-Type: application/json" \
+     -d '{ "url": "https://example.com" }'
+
+# Click an element in a specific session
+curl -X POST http://localhost:8080/tools/browser_click \
+     -H "Content-Type: application/json" \
+     -H "Session-Id: my-session-123" \
+     -d '{ "element": "Login Button", "ref": "button#login" }'
+
+# Get tab list (GET request, uses default session)
+curl http://localhost:8080/tools/browser_tab_list
+
+# Get tab list for a specific session
+curl -H "Session-Id: my-session-123" http://localhost:8080/tools/browser_tab_list
+```
+
+##### JavaScript (fetch)
+
+```javascript
+// Navigate in default session
+fetch('http://localhost:8080/tools/browser_navigate', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ url: 'https://example.com' })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+
+// Type text in a specific session
+fetch('http://localhost:8080/tools/browser_type', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Session-Id': 'user-abc-session'
+  },
+  body: JSON.stringify({
+    element: "Search Input",
+    ref: "input[name='q']",
+    text: "Playwright MCP"
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+
+// Get tab list for a specific session
+fetch('http://localhost:8080/tools/browser_tab_list', {
+  headers: {
+    'Session-Id': 'user-abc-session'
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+##### Python (requests)
+
+```python
+import requests
+import json
+
+base_url = 'http://localhost:8080/tools'
+session_id = 'python-session-456'
+
+# Navigate in a specific session
+headers = {
+    'Content-Type': 'application/json',
+    'Session-Id': session_id
+}
+payload = {'url': 'https://github.com'}
+response = requests.post(f'{base_url}/browser_navigate', headers=headers, data=json.dumps(payload))
+print(response.json())
+
+# Get tab list for the same session
+headers_no_content = {'Session-Id': session_id}
+response = requests.get(f'{base_url}/browser_tab_list', headers=headers_no_content)
+print(response.json())
+```
 ```
 
 ### Tool Modes

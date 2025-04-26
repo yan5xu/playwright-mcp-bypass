@@ -134,6 +134,12 @@ export class Context {
       for (const page of this._browserContext.pages())
         this._onPageCreated(page);
       this._browserContext.on('page', page => this._onPageCreated(page));
+
+      // Ensure there is at least one tab after initialization
+      if (this._tabs.length === 0) {
+        console.log('[Context] No initial tabs found, creating a new one.');
+        await this._browserContext.newPage(); // This will trigger _onPageCreated
+      }
     }
     return this._browserContext;
   }
